@@ -3,7 +3,7 @@ plugins {
 }
 
 allprojects {
-  group = 'org.wisepersist'
+  group = 'de.set'
   version = "$version"
 }
 

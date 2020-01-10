@@ -44,6 +44,7 @@ public class GwtBasePlugin implements Plugin<Project> {
 
 	public static final String GWT_CONFIGURATION = "gwt";
 	public static final String GWT_SDK_CONFIGURATION = "gwtSdk";
+	public static final String GWT_USER_CONFIGURATION = "gwtUser";
 	public static final String EXTENSION_NAME = "gwt";
 	public static final String BUILD_DIR = "gwt";
 	public static final String EXTRA_DIR = "extra";
@@ -68,6 +69,7 @@ public class GwtBasePlugin implements Plugin<Project> {
 	private GwtPluginExtension extension;
 	private Configuration gwtConfiguration;
 	private Configuration gwtSdkConfiguration;
+	private Configuration gwtUserConfiguration;
 	private ConfigurableFileCollection allGwtConfigurations;
 
 	@Override
@@ -89,17 +91,20 @@ public class GwtBasePlugin implements Plugin<Project> {
 				.setDescription("Classpath for GWT client libraries that are not included in the war");
 		gwtSdkConfiguration = project.getConfigurations().create(GWT_SDK_CONFIGURATION)
 				.setDescription("Classpath for GWT SDK libraries (gwt-dev, gwt-user)");
+		gwtUserConfiguration = project.getConfigurations().create(GWT_USER_CONFIGURATION)
+				.setDescription("Classpath for gwt-user library");
 		allGwtConfigurations = project.files(gwtConfiguration, gwtSdkConfiguration);
+		ConfigurableFileCollection gwtTestConfigurations = project.files(gwtUserConfiguration);
 
-		addToMainSourceSetClasspath(allGwtConfigurations);
+		addToMainSourceSetClasspath(gwtTestConfigurations);
 
 		final SourceSet testSourceSet = getTestSourceSet();
-		testSourceSet.setCompileClasspath(testSourceSet.getCompileClasspath().plus(allGwtConfigurations));
+		testSourceSet.setCompileClasspath(testSourceSet.getCompileClasspath().plus(gwtTestConfigurations));
 
 		project.afterEvaluate(new Action<Project>() {
 			@Override
 			public void execute(final Project project) {
-				FileCollection runtimeClasspath = allGwtConfigurations.plus(testSourceSet
+				FileCollection runtimeClasspath = gwtTestConfigurations.plus(testSourceSet
 										.getRuntimeClasspath());
 				if(extension.getTest().isHasGwtTests()) {
 					runtimeClasspath = project.files(
@@ -124,6 +129,7 @@ public class GwtBasePlugin implements Plugin<Project> {
 				if (parsedGwtVersion != null) {
 					project.getDependencies().add(GWT_SDK_CONFIGURATION, gwtDependency(GWT_DEV, parsedGwtVersion));
 					project.getDependencies().add(GWT_SDK_CONFIGURATION, gwtDependency(GWT_USER, parsedGwtVersion));
+					project.getDependencies().add(GWT_USER_CONFIGURATION, gwtDependency(GWT_USER, parsedGwtVersion));
 					project.getDependencies().add(JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME, gwtDependency(GWT_SERVLET, parsedGwtVersion));
 
 					if ((major == 2 && minor >= 5) || major > 2) {
